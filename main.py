@@ -17,8 +17,7 @@ datapoint_name = "datapoint"
 
 data_frame = pd.read_csv('data/data.tsv', sep="\t")
 
-### TODO find a way to create unique names, here 1:600 repeated twice
-datapoint_list = data_frame.loc[data_frame[trial_name] == 1, datapoint_name].to_list()
+datapoint_list = data_frame.loc[data_frame[trial_name] == 1, datapoint_name].unique().tolist()
 
 t_values = []
 
@@ -71,7 +70,7 @@ for i in tqdm(range(len(t_values))):
 # for plotting in R
 t_data = pd.DataFrame(t_values)
 t_data = t_data.rename(columns={0: "t"})
-# t_data.to_csv("outputs/out.tsv", header=True, index=False)
+t_data.to_csv("outputs/t_values.tsv", header=True, index=False)
 
 tfce_data = pd.DataFrame(tfce_values)
 tfce_data = tfce_data.rename(columns={0: "tfce"})
