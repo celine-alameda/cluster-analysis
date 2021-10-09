@@ -41,7 +41,7 @@ for i in tqdm(range(len(t_values))):
     if t_values[i] == 0:
         tfce_values.append(0)
         continue
-    signum = t_values[i] / t_values[i]
+    signum = t_values[i] / abs(t_values[i])
     h_p = math.floor(abs(t_values[i]) / dh) * dh
     height = dh
     tfce = 0
@@ -74,4 +74,4 @@ t_data.to_csv("outputs/t_values.tsv", header=True, index=False)
 
 tfce_data = pd.DataFrame(tfce_values)
 tfce_data = tfce_data.rename(columns={0: "tfce"})
-tfce_data.to_csv("outputs/tfce.tsv", header=True, index=False)
+tfce_data.to_csv("outputs/tfce_values.tsv", header=True, index=False)
