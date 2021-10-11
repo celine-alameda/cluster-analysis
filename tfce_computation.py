@@ -1,9 +1,14 @@
 import math
+
+# values as per doi:10.1016/j.neuroimage.2008.03.061
 dh = 0.1
+extend_weight = 0.5
+height_weight = 2
+
+
 
 def tfce_from_distribution(distribution: list):
     """Given a distribution (1D list of values), computes the Threshold-Free Cluster Enhancement"""
-
     tfce_values = []
     for i in range(len(distribution)):
         # floor to 0.1
@@ -31,7 +36,7 @@ def tfce_from_distribution(distribution: list):
                 if abs(distribution[index] < height):
                     break
                 extend += 1
-                index += 1
+                index -= 1
             tfce = tfce + math.pow(extend, extend_weight) * math.pow(height, height_weight)
             height += dh
         tfce = tfce * signum
