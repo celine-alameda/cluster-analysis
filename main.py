@@ -33,7 +33,7 @@ def t_values_from_dataframe(df1: pd.DataFrame):
 
 
 local_o_name = "Local.o"
-condition_name = "sound_state"
+condition_name = "condition"
 condition_value_pre = 0
 condition_value_post = 1
 trial_name = "trial"
