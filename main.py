@@ -5,21 +5,15 @@ from tqdm import tqdm
 from tfce_computation import tfce_from_distribution
 import time
 
-n_resamplings = 100
+n_resamplings = 1000
 alpha = 0.05
 # init random number generator with seed (for reproducibility)
 rng = np.random.default_rng(42)
 
 
-def resample_data_frame(df2: pd.DataFrame):
-    n_samples = df2.shape[0]
-    random_ints = rng.integers(low=0, high=n_samples, size=n_samples)
-    resampled_df = df2.iloc[random_ints]
-    resampled_df[trial_name] = df2[trial_name].values
-    resampled_df[datapoint_name] = df2[datapoint_name].values
-    resampled_df[condition_name] = df2[condition_name].values
-    resampled_df.index = range(n_samples)
-    return resampled_df
+def shuffle_t_cluster(t_values: list):
+    ints = rng.integers(low=0, high=2, size=len(t_values)) * 2 - 1
+    return t_values * ints
 
 
 def t_values_from_dataframe(df1: pd.DataFrame):
@@ -58,19 +52,18 @@ tfce_data = pd.DataFrame(actual_tfce_list)
 tfce_data = tfce_data.rename(columns={0: "tfce"})
 
 # now, resample and check for significance
-resampled_tfces = []
+max_tfces = []
+min_tfces = []
 for _ in tqdm(range(n_resamplings)):
-    df = resample_data_frame(data_frame)
-    t_list = t_values_from_dataframe(df)
-    tfce_list = tfce_from_distribution(t_list)
-    resampled_tfces.append(tfce_list)
+    shuffled_ts = shuffle_t_cluster(actual_t_list)
+    tfce_list = tfce_from_distribution(shuffled_ts)
+    max_tfces.append(max(tfce_list))
+    min_tfces.append(min(tfce_list))
 
-resampled_tfces = np.array(resampled_tfces)
+lower = np.percentile(min_tfces, 100 * alpha / 2.0)
+upper = np.percentile(max_tfces, 100 * (1 - (alpha / 2.0)))
 significance = []
-for i in tqdm(range(resampled_tfces.shape[1])):
-    one_datapoint = np.squeeze(resampled_tfces[:, i])
-    lower = np.percentile(one_datapoint, 100 * alpha / 2.0)
-    upper = np.percentile(one_datapoint, (1 - (alpha / 2.0)) * 100)
+for i in range(len(actual_tfce_list)):
     actual_tfce = actual_tfce_list[i]
     if lower <= actual_tfce <= upper:
         significance.append(0)
