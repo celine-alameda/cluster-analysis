@@ -32,7 +32,7 @@ def t_values_from_dataframe(df1: pd.DataFrame):
     return t_values
 
 
-local_o_name = "Local.o"
+local_o_name = "local_o"
 condition_name = "condition"
 condition_value_pre = 0
 condition_value_post = 1
