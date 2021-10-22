@@ -11,12 +11,32 @@ alpha = 0.05
 rng = np.random.default_rng(42)
 
 
-def shuffle_t_cluster(t_values: list):
+def shuffle_t_cluster_sign(t_values: list):
+    """shuffle the sign of the t values. Useful when the t-values are computed between two conditions.
+    In this case it is equivalent to shuffling the two conditions"""
     ints = rng.integers(low=0, high=2, size=len(t_values)) * 2 - 1
     return t_values * ints
 
 
-def t_values_from_dataframe(df1: pd.DataFrame):
+def shuffle_t_cluster_position(t_values: list):
+    """shuffle the position of the t values, with replacement (as should be for bootstrapping)"""
+    ints = rng.integers(low=0, high=len(t_values), size=len(t_values))
+    return [t_values[index] for index in ints]
+
+
+def t_values_from_dataframe_one_sample(df1: pd.DataFrame):
+    datapoint_list = df1.loc[data_frame[trial_name] == 1, datapoint_name].unique().tolist()
+    t_values = []
+    # compute t value for each datapoint to establish clusters
+    for datapoint in datapoint_list:
+        values = df1.loc[
+            (df1[datapoint_name] == datapoint), local_o_name].to_list()
+        t, p = stats.ttest_1samp(values, 0.0)
+        t_values.append(t)
+    return t_values
+
+
+def t_values_from_dataframe_two_samples(df1: pd.DataFrame):
     datapoint_list = df1.loc[data_frame[trial_name] == 1, datapoint_name].unique().tolist()
     t_values = []
     # compute t value for each datapoint to establish clusters
@@ -32,20 +52,25 @@ def t_values_from_dataframe(df1: pd.DataFrame):
     return t_values
 
 
+data_file = "time_resolved_local_o_3_u.tsv"
 local_o_name = "local_o"
+is_condition = False
 condition_name = "condition"
 condition_value_pre = 0
 condition_value_post = 1
 trial_name = "trial"
-datapoint_name = "datapoint"
+datapoint_name = "time"
 
-data_frame = pd.read_csv('data/data.tsv', sep="\t")
+data_frame = pd.read_csv('data/' + data_file, sep="\t")
 
 # for plotting in R
-actual_t_list = t_values_from_dataframe(data_frame)
+if is_condition:
+    actual_t_list = t_values_from_dataframe_two_samples(data_frame)
+else:
+    actual_t_list = t_values_from_dataframe_one_sample(data_frame)
 t_data = pd.DataFrame(actual_t_list)
 t_data = t_data.rename(columns={0: "t"})
-t_data.to_csv("outputs/t_values.tsv", header=True, index=False)
+t_data.to_csv("outputs/t_" + data_file.split('.')[0] + ".tsv", header=True, index=False)
 
 actual_tfce_list = tfce_from_distribution(actual_t_list)
 tfce_data = pd.DataFrame(actual_tfce_list)
@@ -55,7 +80,10 @@ tfce_data = tfce_data.rename(columns={0: "tfce"})
 max_tfces = []
 min_tfces = []
 for _ in tqdm(range(n_resamplings)):
-    shuffled_ts = shuffle_t_cluster(actual_t_list)
+    if is_condition:
+        shuffled_ts = shuffle_t_cluster_sign(actual_t_list)
+    else:
+        shuffled_ts = shuffle_t_cluster_position(actual_t_list)
     tfce_list = tfce_from_distribution(shuffled_ts)
     max_tfces.append(max(tfce_list))
     min_tfces.append(min(tfce_list))
@@ -71,4 +99,4 @@ for i in range(len(actual_tfce_list)):
         significance.append(1)
 
 tfce_data["sig"] = significance
-tfce_data.to_csv("outputs/tfce_values.tsv", header=True, index=False, sep='\t')
+tfce_data.to_csv("outputs/tfce_" + data_file.split('.')[0] + ".tsv", header=True, index=False, sep='\t')
