@@ -26,13 +26,13 @@ def analyze(data_file, dv, seed):
 
     print("Computing actual TFCE values")
     t = time.time()
-    tfce_tdcs = tfce_from_distribution(f_tdcs_values)
-    tfce_time = tfce_from_distribution(f_time_values)
-    tfce_inter = tfce_from_distribution(f_inter_values)
+    actual_tfce_tdcs = tfce_from_distribution(f_tdcs_values)
+    actual_tfce_time = tfce_from_distribution(f_time_values)
+    actual_tfce_inter = tfce_from_distribution(f_inter_values)
     print("Done in {} seconds.".format(time.time() - t))
-    f_data["TFCE_tdcs"] = tfce_tdcs
-    f_data["TFCE_time"] = tfce_time
-    f_data["TFCE_inter"] = tfce_inter
+    f_data["TFCE_tdcs"] = actual_tfce_tdcs
+    f_data["TFCE_time"] = actual_tfce_time
+    f_data["TFCE_inter"] = actual_tfce_inter
 
     print("Generating {} resamplings for {} datapoints".format(n_resamplings, len(datapoint_list)))
     t = time.time()
@@ -91,47 +91,56 @@ def analyze(data_file, dv, seed):
     print("Done in {} seconds.".format(time.time() - t))
 
     print("Computing F values for each resampling")
-    f_data = pd.DataFrame(f_data)
-    f_data.to_csv("outputs/f_" + data_file.split('.')[0] + ".tsv", header=True, index=False, sep="\t")
-    exit(1)
+    t = time.time()
+    resampled_f_tdcs = []
+    resampled_f_time = []
+    resampled_f_inter = []
+    for resampled_df in resampled_data_frames:
+        rs_f_tdcs_values, rs_f_time_values, rs_f_inter_values = analyzer.compute_values(resampled_df, datapoint_name="datapoint",
+                                                                               datapoints_list=datapoint_list)
+        resampled_f_tdcs.append(rs_f_tdcs_values)
+        resampled_f_time.append(rs_f_time_values)
+        resampled_f_inter.append(rs_f_inter_values)
+    print("Done in {} seconds.".format(time.time() - t))
 
-    tfce_data = pd.DataFrame(actual_tfce_list)
-    tfce_data = tfce_data.rename(columns={0: "tfce"})
+    resampled_tfce_tdcs = []
+    resampled_tfce_time = []
+    resampled_tfce_inter = []
+    print("Computing max tfce values for resamplings")
+    t = time.time()
+    max_tfce_tdcs = []
+    max_tfce_time = []
+    max_tfce_inter = []
+    for i in range(len(resampled_data_frames)):
+        max_tfce_tdcs.append(max(tfce_from_distribution(resampled_f_tdcs[i])))
+        max_tfce_time.append(max(tfce_from_distribution(resampled_f_time[i])))
+        max_tfce_inter.append(max(tfce_from_distribution(resampled_f_inter[i])))
+    print("Done in {} seconds.".format(time.time() - t))
 
-    # now, resample and check for significance
-    max_tfces = []
-    min_tfces = []
-
-    all_resamplings = []
-    print("CHANGE RESAMPLING CODE")
-    exit(1)
-    print("Generating {} resamplings".format(n_resamplings))
-    for _ in range(n_resamplings):
-        all_resamplings.append(shuffle_t_cluster_position(rng, actual_unclustered_list))
-    print("Processing resamplings with {} processes".format(n_workers))
-    with concurrent.futures.ProcessPoolExecutor(max_workers=n_workers) as executor:
-        futures = {executor.submit(compute_resampling,
-                                   all_resamplings,
-                                   i * n_resamplings // n_workers,
-                                   n_resamplings // n_workers): i for i
-                   in range(n_workers)}
-        for future in concurrent.futures.as_completed(futures):
-            min_tfce, max_tfce = future.result()
-            min_tfces.append(min_tfce)
-            max_tfces.append(max_tfce)
-
-    lower = np.percentile(min_tfces, 100 * alpha / 2.0)
-    upper = np.percentile(max_tfces, 100 * (1 - (alpha / 2.0)))
-    significance = []
-    for i in range(len(actual_tfce_list)):
-        actual_tfce = actual_tfce_list[i]
-        if lower <= actual_tfce <= upper:
-            significance.append(0)
+    # now, check for significance
+    upper_tdcs = np.percentile(max_tfce_tdcs, 100 * (1 - (alpha / 2.0)))
+    upper_time = np.percentile(max_tfce_time, 100 * (1 - (alpha / 2.0)))
+    upper_inter = np.percentile(max_tfce_inter, 100 * (1 - (alpha / 2.0)))
+    significance_tdcs = []
+    significance_time = []
+    significance_inter = []
+    for i in range(len(datapoint_list)):
+        if actual_tfce_tdcs[i] <= upper_tdcs:
+            significance_tdcs.append(0)
         else:
-            significance.append(1)
+            significance_tdcs.append(1)
+        if actual_tfce_time[i] <= upper_time:
+            significance_time.append(0)
+        else:
+            significance_time.append(1)
+        if actual_tfce_inter[i] <= upper_inter:
+            significance_inter.append(0)
+        else:
+            significance_inter.append(1)
 
-    tfce_data["sig"] = significance
-    tfce_data.to_csv("outputs/tfce_" + data_file.split('.')[0] + ".tsv", header=True, index=False, sep='\t')
+    f_data["sig_tdcs"] = significance_tdcs
+    f_data["sig_time"] = significance_time
+    f_data["sig_inter"] = significance_inter
 
     f_data = pd.DataFrame(f_data)
     f_data.to_csv("outputs/f_" + data_file.split('.')[0] + ".tsv", header=True, index=False, sep="\t")
@@ -139,7 +148,7 @@ def analyze(data_file, dv, seed):
 
 
 if __name__ == "__main__":
-    n_resamplings = 100
+    n_resamplings = 2
     n_workers = 8
     # each worker will process n_resamplings // n_workers tasks
     alpha = 0.05
