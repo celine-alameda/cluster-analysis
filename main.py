@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 from tfce_toolbox.tfce_computation import tfce_from_distribution, compute_resampling, shuffle_t_cluster_position
-from tfce_toolbox.two_by_two_f import TwoByTwoFSingleProcess
+import tfce_toolbox.two_by_two_f
 
 
 def analyze(data_file, dv, seed):
@@ -13,8 +13,8 @@ def analyze(data_file, dv, seed):
     t_overall = time.time()
     rng = np.random.default_rng(seed)
     data_frame = pd.read_csv('data/' + data_file, sep="\t")
-    analyzer = TwoByTwoFSingleProcess(dv=dv, within1="condition_tdcs", within2="condition_time",
-                                      subject="subject")
+    analyzer = tfce_toolbox.two_by_two_f.TwoByTwoFMultiProcess(dv=dv, within1="condition_tdcs", within2="condition_time",
+                                                  subject="subject", n_workers=8)
     print("Computing actual list of F values")
     t = time.time()
     datapoint_list = data_frame.loc[:, "datapoint"].unique().tolist()
@@ -148,14 +148,14 @@ def analyze(data_file, dv, seed):
 
 
 if __name__ == "__main__":
-    n_resamplings = 2
+    n_resamplings = 600
     n_workers = 8
     # each worker will process n_resamplings // n_workers tasks
     alpha = 0.05
     seed = 42
     inputFiles = []
-    # analyses = ["3_f", "3_u", "4_fa", "4_ua"]
-    analyses = ["3_f"]
+    analyses = ["3_u", "4_fa", "4_ua"]
+    # analyses = ["3_f"]
     dv = "mean_local_o"
     # this logic only creates the data files to be analyzed. It can be changed at will.
     for analysis in analyses:
