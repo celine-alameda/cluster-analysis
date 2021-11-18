@@ -13,8 +13,9 @@ def analyze(data_file, dv, seed):
     t_overall = time.time()
     rng = np.random.default_rng(seed)
     data_frame = pd.read_csv('data/' + data_file, sep="\t")
-    analyzer = tfce_toolbox.two_by_two_f.TwoByTwoFMultiProcess(dv=dv, within1="condition_tdcs", within2="condition_time",
-                                                  subject="subject", n_workers=8)
+    analyzer = tfce_toolbox.two_by_two_f.TwoByTwoFMultiProcess(dv=dv, within1="condition_tdcs",
+                                                               within2="condition_time",
+                                                               subject="subject", n_workers=8)
     print("Computing actual list of F values")
     t = time.time()
     datapoint_list = data_frame.loc[:, "datapoint"].unique().tolist()
@@ -69,7 +70,6 @@ def analyze(data_file, dv, seed):
         resampled_df = resampled_df.rename(columns={"new_value": dv})
         resampled_data_frames.append(resampled_df)
 
-
     # takes 4 secs only for 1 resample >_>
     # resampled_df = data_frame.copy()
     # shuffled_value_indexes = rng.integers(low=0, high=4, size=len(data_frame))
@@ -96,8 +96,9 @@ def analyze(data_file, dv, seed):
     resampled_f_time = []
     resampled_f_inter = []
     for resampled_df in resampled_data_frames:
-        rs_f_tdcs_values, rs_f_time_values, rs_f_inter_values = analyzer.compute_values(resampled_df, datapoint_name="datapoint",
-                                                                               datapoints_list=datapoint_list)
+        rs_f_tdcs_values, rs_f_time_values, rs_f_inter_values = analyzer.compute_values(resampled_df,
+                                                                                        datapoint_name="datapoint",
+                                                                                        datapoints_list=datapoint_list)
         resampled_f_tdcs.append(rs_f_tdcs_values)
         resampled_f_time.append(rs_f_time_values)
         resampled_f_inter.append(rs_f_inter_values)
@@ -154,12 +155,12 @@ if __name__ == "__main__":
     alpha = 0.05
     seed = 42
     inputFiles = []
-    analyses = ["3_u", "4_fa", "4_ua"]
+    analyses = ["3_f", "3_u", "4_fa", "4_ua"]
     # analyses = ["3_f"]
-    dv = "mean_local_o"
+    dv = "mean_local_o_dmnd"
     # this logic only creates the data files to be analyzed. It can be changed at will.
     for analysis in analyses:
-        fileName = analysis + ".tsv"
+        fileName = analysis + "_demeaned.tsv"
         inputFiles.append(fileName)
 
     counter = 0
