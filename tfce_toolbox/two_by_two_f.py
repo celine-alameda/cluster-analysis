@@ -1,9 +1,12 @@
 import concurrent
+from abc import abstractmethod
 
 import pingouin as pg
 
+from tfce_toolbox.cluster_value_calculator import ClusterValueCalculator
 
-class TwoByTwoF:
+
+class TwoByTwoF(ClusterValueCalculator):
 
     def __init__(self, dv, within1, within2, subject):
         self.dv = dv
@@ -14,6 +17,10 @@ class TwoByTwoF:
     def compute_value(self, data_frame):
         aov = pg.rm_anova(data=data_frame, dv=self.dv, within=[self.within1, self.within2], subject=self.subject)
         return aov["F"].to_list()
+
+    @abstractmethod
+    def compute_values(self, data_frame, datapoints_list, datapoint_name):
+        pass
 
 
 class TwoByTwoFSingleProcess(TwoByTwoF):
@@ -53,7 +60,8 @@ class TwoByTwoFMultiProcess(TwoByTwoF):
 
         data_dict = {}
         with concurrent.futures.ProcessPoolExecutor(max_workers=self.n_workers) as executor:
-            future_to_url = {executor.submit(self.compute_sub_df, data_frame, work, datapoint_name): work for work in works}
+            future_to_url = {executor.submit(self.compute_sub_df, data_frame, work, datapoint_name): work for work in
+                             works}
             for future in concurrent.futures.as_completed(future_to_url):
                 try:
                     data = future.result()
