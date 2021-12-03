@@ -10,7 +10,7 @@ class RawValue(ClusterValueCalculator):
         self.datapoint_name = datapoint_name
 
     def compute_value(self, data_frame):
-        value = data_frame.iloc[1, self.dv]
+        value = data_frame.loc[0, self.dv]
         return value
 
     @abstractmethod
@@ -25,6 +25,7 @@ class RawValueSingleProcess(RawValue):
         values = []
         for datapoint in datapoints_list:
             partial_data_frame = data_frame[data_frame[self.datapoint_name] == datapoint]
+            partial_data_frame = partial_data_frame.reset_index()
             value = self.compute_value(partial_data_frame)
             values.append(value)
         return values

@@ -17,7 +17,7 @@ def analyze(data_file, dv, seed):
     # analyzer = tfce_toolbox.two_by_two_f.TwoByTwoFMultiProcess(dv=dv, within1="condition_tdcs",
     #                                                           within2="condition_time",
     #                                                           subject="subject", n_workers=8)
-    analyzer = tfce_toolbox.raw_value.RawValueSingleProcess(dv=dv)
+    analyzer = tfce_toolbox.raw_value.RawValueSingleProcess(dv=dv, datapoint_name="datapoint")
     print("Computing actual list of F values")
     t = time.time()
     values = analyzer.compute_values(data_frame)
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     dv = "local_o"
     # this logic only creates the data files to be analyzed. It can be changed at will.
     for subject in subjects:
-        fileName = "subject_" + subject + ".tsv"
+        fileName = "subject_" + str(subject) + ".tsv"
         inputFiles.append(fileName)
     counter = 0
     for data_file in inputFiles:
