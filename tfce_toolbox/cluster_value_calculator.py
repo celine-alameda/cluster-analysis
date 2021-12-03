@@ -4,7 +4,7 @@ from abc import abstractmethod
 class ClusterValueCalculator:
 
     @abstractmethod
-    def compute_values(self, data_frame, datapoints_list, datapoint_name):
+    def compute_values(self, data_frame):
         pass
 
     @abstractmethod
