@@ -49,14 +49,16 @@ def tfce_from_distribution(distribution: list):
             extend = 1  # at least this sample
             index = i + 1
             while index < len(distribution):
-                if abs(distribution[index] < height):
+                signum_at_index = distribution[index] / abs(distribution[index])
+                if abs(distribution[index] < height) or signum_at_index != signum:
                     break
                 extend += 1
                 index += 1
             # reach backward
             index = i - 1
-            while index > 0:
-                if abs(distribution[index] < height):
+            while index >= 0:
+                signum_at_index = distribution[index] / abs(distribution[index])
+                if abs(distribution[index] < height) or signum_at_index != signum:
                     break
                 extend += 1
                 index -= 1
