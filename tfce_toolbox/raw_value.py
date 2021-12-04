@@ -33,4 +33,7 @@ class RawValueSingleProcess(RawValue):
     def resample_values(self, data_frame):
         datapoints_list = data_frame.loc[:, self.datapoint_name].unique().tolist()
         sample = random.choices(datapoints_list, k=len(datapoints_list))
-        return data_frame.reindex(sample)
+        data_frame = data_frame.reindex(sample)
+        data_frame[self.datapoint_name] = datapoints_list
+        data_frame = data_frame.reset_index(drop=True)
+        return data_frame
