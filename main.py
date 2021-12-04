@@ -17,8 +17,8 @@ def analyze(data_file, dv, seed):
     # analyzer = tfce_toolbox.two_by_two_f.TwoByTwoFMultiProcess(dv=dv, within1="condition_tdcs",
     #                                                           within2="condition_time",
     #                                                           subject="subject", n_workers=8)
-    analyzer = tfce_toolbox.raw_value.RawValueSingleProcess(dv=dv, datapoint_name="datapoint")
-    print("Computing actual list of F values")
+    analyzer = tfce_toolbox.raw_value.RawValueMultiProcess(dv=dv, datapoint_name="datapoint", n_workers=7)
+    print("Computing actual list of values")
     t = time.time()
     values = analyzer.compute_values(data_frame)
     print("Done in {} seconds.".format(time.time() - t))
@@ -33,18 +33,7 @@ def analyze(data_file, dv, seed):
 
     print("Generating {} resamplings for {} datapoints".format(n_resamplings, len(datapoints_list)))
     t = time.time()
-    resampled_data_frames = []
-
-    for _ in range(n_resamplings):
-        resampled_data_frames.append(analyzer.resample_values(data_frame))
-    print("Done in {} seconds.".format(time.time() - t))
-
-    print("Computing values for each resampling")
-    t = time.time()
-    rs_values = []
-    for resampled_df in resampled_data_frames:
-        rs_val = analyzer.compute_values(resampled_df)
-        rs_values.append(rs_val)
+    rs_values = analyzer.resample_and_compute_values(data_frame, n_resamplings)
 
     print("Done in {} seconds.".format(time.time() - t))
 
@@ -53,9 +42,10 @@ def analyze(data_file, dv, seed):
     t = time.time()
     max_tfce = []
     min_tfce = []
-    for i in range(len(resampled_data_frames)):
-        max_tfce.append(max(tfce_from_distribution(rs_values[i])))
-        min_tfce.append(min(tfce_from_distribution(rs_values[i])))
+    for i in range(len(rs_values)):
+        tfce = tfce_from_distribution(rs_values[i])
+        max_tfce.append(max(tfce))
+        min_tfce.append(min(tfce))
     print("Done in {} seconds.".format(time.time() - t))
 
     # now, check for significance
