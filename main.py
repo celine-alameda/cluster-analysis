@@ -6,7 +6,7 @@ import numpy as np
 
 from tfce_toolbox.tfce_computation import tfce_from_distribution, compute_resampling, shuffle_t_cluster_position
 import tfce_toolbox.two_by_two_f
-import tfce_toolbox.raw_value
+import tfce_toolbox.quicker_raw_value
 
 
 def analyze(data_file, dv, seed):
@@ -17,7 +17,7 @@ def analyze(data_file, dv, seed):
     # analyzer = tfce_toolbox.two_by_two_f.TwoByTwoFMultiProcess(dv=dv, within1="condition_tdcs",
     #                                                           within2="condition_time",
     #                                                           subject="subject", n_workers=8)
-    analyzer = tfce_toolbox.raw_value.RawValueMultiProcess(dv=dv, datapoint_name="datapoint", n_workers=7)
+    analyzer = tfce_toolbox.quicker_raw_value.QuickerRawValueSingleProcess(dv=dv, datapoint_name="datapoint")
     print("Computing actual list of values")
     t = time.time()
     values = analyzer.compute_values(data_frame)
@@ -33,7 +33,7 @@ def analyze(data_file, dv, seed):
 
     print("Generating {} resamplings for {} datapoints".format(n_resamplings, len(datapoints_list)))
     t = time.time()
-    rs_values = analyzer.resample_and_compute_values(data_frame, n_resamplings)
+    rs_values = analyzer.resample_and_compute_values(values, n_resamplings)
 
     print("Done in {} seconds.".format(time.time() - t))
 
