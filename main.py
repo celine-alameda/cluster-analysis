@@ -4,7 +4,8 @@ import time
 import pandas as pd
 import numpy as np
 
-from tfce_toolbox.tfce_computation import tfce_from_distribution, compute_resampling, shuffle_t_cluster_position
+from tfce_toolbox.tfce_computation import tfce_from_distribution, tfces_from_distributions_st, \
+    tfces_from_distributions_mt
 import tfce_toolbox.two_by_two_f
 import tfce_toolbox.quicker_raw_value
 
@@ -34,16 +35,14 @@ def analyze(data_file, dv, seed):
     print("Generating {} resamplings for {} datapoints".format(n_resamplings, len(datapoints_list)))
     t = time.time()
     rs_values = analyzer.resample_and_compute_values(values, n_resamplings)
-
     print("Done in {} seconds.".format(time.time() - t))
 
-    resampled_tfce_tdcs = []
     print("Computing max tfce values for resamplings")
+    resampled_tfce_tdcs = tfces_from_distributions_mt(rs_values, n_workers=7)
     t = time.time()
     max_tfce = []
     min_tfce = []
-    for i in range(len(rs_values)):
-        tfce = tfce_from_distribution(rs_values[i])
+    for tfce in resampled_tfce_tdcs:
         max_tfce.append(max(tfce))
         min_tfce.append(min(tfce))
     print("Done in {} seconds.".format(time.time() - t))

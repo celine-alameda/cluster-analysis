@@ -1,3 +1,4 @@
+import concurrent
 import math
 
 # values as per doi:10.1016/j.neuroimage.2008.03.061
@@ -6,28 +7,26 @@ extend_weight = 0.5
 height_weight = 2
 
 
-def shuffle_t_cluster_sign(rng, t_values: list):
-    """shuffle the sign of the t values. Useful when the t-values are computed between two conditions.
-    In this case it is equivalent to shuffling the two conditions"""
-    ints = rng.integers(low=0, high=2, size=len(t_values)) * 2 - 1
-    return t_values * ints
+def tfces_from_distributions_st(distributions: list):
+    tfces = []
+    for distribution in distributions:
+        tfce = tfce_from_distribution(distribution)
+        tfces.append(tfce)
+    return tfces
 
 
-def shuffle_t_cluster_position(rng, t_values: list):
-    """shuffle the position of the t values, with replacement (as should be for bootstrapping)"""
-    ints = rng.integers(low=0, high=len(t_values), size=len(t_values))
-    return [t_values[index] for index in ints]
-
-
-def compute_resampling(t_resamplings, start, number_to_do):
-    min_values = []
-    max_values = []
-    for i in range(start, start + number_to_do):
-        resampling = t_resamplings[i]
-        tfce_list = tfce_from_distribution(resampling)
-        min_values.append(min(tfce_list))
-        max_values.append(max(tfce_list))
-    return min_values, max_values
+def tfces_from_distributions_mt(distributions: list, n_workers):
+    tfces = []
+    with concurrent.futures.ProcessPoolExecutor(max_workers=n_workers) as executor:
+        future_to_url = {executor.submit(tfce_from_distribution, distrib): distrib for distrib in
+                         distributions}
+        for future in concurrent.futures.as_completed(future_to_url):
+            try:
+                tfce = future.result()
+                tfces.append(tfce)
+            except Exception as exc:
+                print('Exception: {}'.format(exc))
+    return tfces
 
 
 def tfce_from_distribution(distribution: list):
