@@ -6,7 +6,6 @@ import numpy as np
 
 from tfce_toolbox.tfce_computation import tfce_from_distribution, tfces_from_distributions_st, \
     tfces_from_distributions_mt
-import tfce_toolbox.two_by_two_f
 import tfce_toolbox.quicker_raw_value
 
 
